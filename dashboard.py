@@ -2,18 +2,38 @@ import streamlit as st
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import pandas as pd
+import altair as alt
 import plotly.express as px
+import os
+from dotenv import load_dotenv
 
 
 @st.cache_data
 def get_data():
+
+    load_dotenv(".env")
+
+    client_email = os.getenv("CLIENT_EMAIL")
+    client_id = os.getenv("CLIENT_ID")
+    private_key = os.getenv("PRIVATE_KEY").replace("\\n", "\n")
+    private_key_id = os.getenv("PRIVATE_KEY_ID")
+
+    credentials_dict = {
+        "type": "service_account",
+        "client_email": client_email,
+        "client_id": client_id,
+        "private_key": private_key,
+        "private_key_id": private_key_id,
+        "token_uri": "https://accounts.google.com/o/oauth2/token",
+    }
+
     scope = [
         "https://spreadsheets.google.com/feeds",
         "https://www.googleapis.com/auth/drive",
     ]
 
-    credentials = ServiceAccountCredentials.from_json_keyfile_name(
-        "client_key.json", scope
+    credentials = ServiceAccountCredentials.from_json_keyfile_dict(
+        credentials_dict, scope
     )
 
     gc = gspread.authorize(credentials)
@@ -45,6 +65,7 @@ def get_data():
 
 
 def main():
+
     st.title("Blaine Workout Progress Tracker")
     st.subheader("Updated after every workout")
 
@@ -60,9 +81,30 @@ def main():
         horizontal=True,
     )
 
-    df = get_data()
+    days = [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday",
+    ]
 
-    # make one line chart with 3 lines for each workout
+    # make a chart with days of the week and month
+    df = get_data()
+    df["date"] = pd.to_datetime(df["date"], format="%Y-%m-%d")
+
+    df["week"] = (
+        df["date"].dt.isocalendar().week.astype(str)
+        + "-"
+        + (df["date"].dt.isocalendar().year % 100).astype(str)
+    )
+    df["month"] = df["date"].dt.month_name()
+
+    df["day_of_week"] = pd.Categorical(
+        df["date"].dt.day_name(), ordered=True, categories=days
+    )
 
     workouts = [
         "Bench Press (Barbell)",
@@ -90,29 +132,6 @@ def main():
     )
     st.plotly_chart(fig)
 
-    # for workout in enumerate(workouts):
-    #     workout_data = (
-    #         df[df["exercise-name"] == workout[1]]
-    #         .groupby("date")[measurement_filter]
-    #         .max()
-    #         .reset_index()
-    #     )
-
-    #     # create line chart
-    #     fig = px.line(
-    #         workout_data,
-    #         x="date",
-    #         y=measurement_filter,
-    #         title=workout[1],
-    #         labels={
-    #             "date": "Date",
-    #             measurement_filter: measurement_filter.replace("_", " ").title()
-    #             + " (lbs)",
-    #         },
-    #     )
-
-    #     st.plotly_chart(fig)
-
     workout_select = st.selectbox(
         "Select Workout",
         df["exercise-name"].sort_values().unique(),
@@ -122,7 +141,10 @@ def main():
 
     st.plotly_chart(
         px.line(
-            df[df["exercise-name"] == workout_select],
+            df[df["exercise-name"] == workout_select]
+            .groupby(["date", "exercise-name"])[measurement_filter]
+            .max()
+            .reset_index(),
             x="date",
             y=measurement_filter,
             title=workout_select,
@@ -134,7 +156,28 @@ def main():
         )
     )
 
-    st.write(df)
+    chart = (
+        alt.Chart(df, title="Workout by day")
+        .mark_rect()
+        .encode(
+            x=alt.X("week:O", sort=alt.SortField("date")),
+            y=alt.Y("day_of_week:O", sort=days),
+            color=alt.Color(
+                "sum(reps):Q",
+                scale=alt.Scale(scheme="blues"),
+            ),
+            tooltip=[
+                alt.Tooltip("week", title="Week"),
+                alt.Tooltip("day_of_week", title="Day of Week"),
+                alt.Tooltip("sum(reps)", title="Workouts"),
+            ],
+        )
+    )
+
+    st.altair_chart(chart)
+
+    chart_df = df[["date", "exercise-name", "weight", "reps", "one_rep_max"]]
+    st.write(chart_df)
 
 
 if __name__ == "__main__":
