@@ -14,14 +14,22 @@ def get_data():
     try:
         with open(".env") as f:
             load_dotenv(".env")
+            client_email = os.getenv("CLIENT_EMAIL")
+            client_id = os.getenv("CLIENT_ID")
+            private_key = os.getenv("PRIVATE_KEY").replace("\\n", "\n")
+            private_key_id = os.getenv("PRIVATE_KEY_ID")
     except FileNotFoundError:
         load_dotenv()
         print("No .env file found")
 
-    client_email = os.getenv("CLIENT_EMAIL")
-    client_id = os.getenv("CLIENT_ID")
-    private_key = os.getenv("PRIVATE_KEY").replace("\\n", "\n")
-    private_key_id = os.getenv("PRIVATE_KEY_ID")
+    # try st.secrets
+    try:
+        client_email = st.secrets["CLIENT_EMAIL"]
+        client_id = st.secrets["CLIENT_ID"]
+        private_key = st.secrets["PRIVATE_KEY"].replace("\\n", "\n")
+        private_key_id = st.secrets["PRIVATE_KEY_ID"]
+    except KeyError:
+        print("No secrets found")
 
     credentials_dict = {
         "type": "service_account",
