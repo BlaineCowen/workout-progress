@@ -11,7 +11,12 @@ from dotenv import load_dotenv
 @st.cache_data
 def get_data():
 
-    load_dotenv(".env")
+    try:
+        with open(".env") as f:
+            load_dotenv(".env")
+    except FileNotFoundError:
+        load_dotenv()
+        print("No .env file found")
 
     client_email = os.getenv("CLIENT_EMAIL")
     client_id = os.getenv("CLIENT_ID")
