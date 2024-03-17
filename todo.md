@@ -1,3 +1,0 @@
-- [ ] add a table with reps and other information
-- [ ] make layout 4 charts with 4 major lifts
-- [ ] add a 5th with options for other exercises
