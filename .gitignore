@@ -4,3 +4,4 @@ test.py
 todo.md
 config.yaml
 .streamlit/secrets.toml
+secure-config.yaml
