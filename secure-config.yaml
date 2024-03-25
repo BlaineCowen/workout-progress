@@ -1,0 +1,19 @@
+cookie:
+  expiry_days: 30
+  key: plokiplokiploki
+  name: session
+credentials:
+  usernames:
+    bcows827:
+      email: gimmeyocoupons@gmail.com
+      logged_in: false
+      name: Blaine Cowen
+      password: abc
+    rbriggs:
+      email: rbriggs@gmail.com
+      logged_in: false
+      name: Rebecca Briggs
+      password: def
+preauthorized:
+  emails:
+  - melsby@gmail.com

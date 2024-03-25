@@ -2,4 +2,5 @@ client_key.json
 test.py
 .env
 todo.md
-.gitignore
+config.yaml
+.streamlit/secrets.toml

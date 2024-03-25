@@ -10,6 +10,7 @@ import streamlit_authenticator as stauth
 import yaml
 from yaml.loader import SafeLoader
 from datetime import datetime
+from google.cloud import storage
 
 
 @st.cache_data
@@ -199,8 +200,41 @@ def main():
 
     with input_tab:
 
-        with open("config.yaml") as file:
+        def download_blob(bucket_name, source_blob_name, destination_file_name):
+
+            try:
+                client_email = st.secrets["CLIENT_EMAIL"]
+                client_id = st.secrets["CLIENT_ID"]
+                private_key = st.secrets["PRIVATE_KEY"].replace("\\n", "\n")
+                private_key_id = st.secrets["PRIVATE_KEY_ID"]
+
+            except KeyError:
+                print("No secrets found")
+
+            credentials_dict = {
+                "type": "service_account",
+                "client_email": client_email,
+                "client_id": client_id,
+                "private_key": private_key,
+                "private_key_id": private_key_id,
+                "token_uri": "https://accounts.google.com/o/oauth2/token",
+            }
+
+            storage_client = storage.Client.from_service_account_info(credentials_dict)
+
+            bucket = storage_client.bucket(bucket_name)
+
+            # using `Bucket.blob` is preferred here.
+            blob = bucket.blob(source_blob_name)
+            blob.download_to_filename(destination_file_name)
+
+        download_blob("bcows-workout", "config.yaml", "secure-config.yaml")
+
+        with open("secure-config.yaml") as file:
             config = yaml.load(file, Loader=SafeLoader)
+
+        with open("secure-config.yaml", "w") as file:
+            yaml.dump(config, file, default_flow_style=False)
 
         authenticator = stauth.Authenticate(
             config["credentials"],
@@ -210,20 +244,17 @@ def main():
             config["preauthorized"],
         )
 
-        login = authenticator.login()
+        if (
+            st.session_state["authentication_status"] is False
+            or st.session_state["authentication_status"] is None
+        ):
+            authenticator.login()
 
-        if st.session_state["authentication_status"] == True:
+        if st.session_state["authentication_status"]:
+            logout = authenticator.logout()
 
-            # current_workout_df = pd.DataFrame(
-            #     columns=[
-            #         "exercise-name",
-            #         "weight",
-            #         "reps",
-            #         "orm",
-            #         "previous_orm",
-            #         "previous_maxweight",
-            #     ]
-            # )
+            if logout:
+                st.rerun()
 
             st.subheader("Add Data")
 
