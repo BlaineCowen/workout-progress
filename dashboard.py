@@ -381,6 +381,8 @@ def main():
                     st.session_state["start_df"] = pd.DataFrame(start_data, index=[0])
                     edited_df = st.session_state["start_df"]
 
+                    # rerun get_data
+                    get_data()
                     st.rerun()
 
                 add_to_sheets(st.session_state["start_df"])
