@@ -281,7 +281,7 @@ def main():
                     num_rows="dynamic",
                     column_config={
                         "exercise-name": st.column_config.SelectboxColumn(
-                            width=400,
+                            width="small",
                             options=df["exercise-name"].sort_values().unique(),
                         ),
                         "weight": st.column_config.NumberColumn(),
