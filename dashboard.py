@@ -149,7 +149,7 @@ def main():
                 + " (lbs)",
             },
         )
-        st.plotly_chart(fig)
+        st.plotly_chart(fig, use_container_width=True)
 
         workout_select = st.selectbox(
             "Select Workout",
@@ -158,22 +158,22 @@ def main():
             index=0,
         )
 
-        st.plotly_chart(
-            px.line(
-                df[df["exercise-name"] == workout_select]
-                .groupby(["date", "exercise-name"])[measurement_filter]
-                .max()
-                .reset_index(),
-                x="date",
-                y=measurement_filter,
-                title=workout_select,
-                labels={
-                    "date": "Date",
-                    measurement_filter: measurement_filter.replace("_", " ").title()
-                    + " (lbs)",
-                },
-            )
+        select_chart = px.line(
+            df[df["exercise-name"] == workout_select]
+            .groupby(["date", "exercise-name"])[measurement_filter]
+            .max()
+            .reset_index(),
+            x="date",
+            y=measurement_filter,
+            title=workout_select,
+            labels={
+                "date": "Date",
+                measurement_filter: measurement_filter.replace("_", " ").title()
+                + " (lbs)",
+            },
         )
+
+        st.plotly_chart(select_chart, use_container_width=True)
 
         chart = (
             alt.Chart(df, title="Workout by day")
@@ -193,10 +193,10 @@ def main():
             )
         )
 
-        st.altair_chart(chart)
+        st.altair_chart(chart, use_container_width=True)
 
         chart_df = df[["date", "exercise-name", "weight", "reps", "one_rep_max"]]
-        st.write(chart_df)
+        st.write(chart_df, use_container_width=True)
 
     with input_tab:
 
